@@ -10,12 +10,8 @@ def main() -> None:
         description="Send a slack alert with leaderboard info from `Run Across America`."
     )
     parser.add_argument(
-        "user_code",
-        help="User invitation code emailed after sign-up.",
-    )
-    parser.add_argument(
-        "team_name",
-        help="Team name, not case sensitive.",
+        "team_id",
+        help="Team ID from the Run Across America API",
     )
     parser.add_argument(
         "slack_token",
@@ -30,7 +26,7 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    client: AlertBuilder = AlertBuilder(args.user_code, args.team_name)
+    client: AlertBuilder = AlertBuilder(args.team_id)
     alert: AlertInfo = client.build()
     pprint(alert)
 

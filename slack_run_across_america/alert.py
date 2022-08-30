@@ -8,25 +8,15 @@ from .models import AlertInfo
 
 
 class AlertBuilder:
-    def __init__(self, user_code: str, team_name: str) -> None:
-        self.client: RunAcrossAmerica = RunAcrossAmerica(user_code)
-        self.team_name = team_name
+    def __init__(self, team_id: str) -> None:
+        self.client: RunAcrossAmerica = RunAcrossAmerica()
+        self.team_name = team_id
 
     def build(self) -> AlertInfo:
-        teams: List[Team] = list(self.client.teams())
+        goal: Goal = self.client.goals(self.team_id, include_progress=True)
+        leaderboard: List[MemberStats] = list(self.client.leaderboard(self.team_id))
 
-        team: List[Team] = list(
-            filter(lambda t: t.name.lower() == self.team_name.lower(), teams)
-        )
-        if not team:
-            logging.warning(f"Unable to find team `{self.team_name}` for user.")
-            return None
-        team: Team = next(team)
-
-        goal: Goal = self.client.goals(team.id, include_progress=True)
-        leaderboard: List[MemberStats] = list(self.client.leaderboard(team.id))
-
-        activities: List[Activity] = list(self.client.feed(team.id))
+        activities: List[Activity] = list(self.client.feed(self.team_id))
         activities = list(
             filter(lambda a: a.time_completed > goal.start_date, activities)
         )
