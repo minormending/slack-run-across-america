@@ -21,7 +21,7 @@ class AlertBuilder:
         if not team:
             logging.warning(f"Unable to find team `{self.team_name}` for user.")
             return None
-        team: Team = next(team)
+        team: Team = team[0]
 
         goal: Goal = self.client.goals(team.id, include_progress=True)
         leaderboard: List[MemberStats] = list(self.client.leaderboard(team.id))
@@ -31,7 +31,7 @@ class AlertBuilder:
             filter(lambda a: a.time_completed > goal.start_date, activities)
         )
 
-        max_users: int = max(len(leaderboard), 3)  # at most 3 users from team
+        max_users: int = min(len(leaderboard), 3)  # at most 3 users from team
 
         exclude_leaders: List[str] = [i.id for i in leaderboard[:max_users]]
         honorable_mentions: Dict[str, Activity] = self._get_activity_leaders(
