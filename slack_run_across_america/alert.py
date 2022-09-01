@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import logging
 from typing import Dict, List
 
@@ -8,22 +8,35 @@ from .models import AlertInfo
 
 
 class AlertBuilder:
-    def __init__(self, team_id: str) -> None:
+    def __init__(self) -> None:
         self.client: RunAcrossAmerica = RunAcrossAmerica()
-        self.team_name = team_id
 
-    def build(self) -> AlertInfo:
-        goal: Goal = self.client.goals(self.team_id, include_progress=True)
-        leaderboard: List[MemberStats] = list(self.client.leaderboard(self.team_id))
+    def build(self, team_id: str) -> AlertInfo:
+        leaderboard: List[MemberStats] = list(self.client.leaderboard(team_id))
+        if not leaderboard:
+            logging.error(f"Team {team_id} has no memebers, exiting!")
+            return
 
-        activities: List[Activity] = list(self.client.feed(self.team_id))
+        # Could not find a team route, this is similar to how the app does it.
+        random_user_id: str = leaderboard[0].id
+        teams: List[Team] = list(self.client.teams(random_user_id))
+        team: Team = next(filter(lambda t: t.id == team_id, teams))
+
+        goal: Goal = self.client.goals(team_id, include_progress=True)
+
+        # get all the activities in the last week
+        activities: List[Activity] = list(self.client.feed(team_id))
+        last_week: datetime = datetime.today() - timedelta(days=7)
         activities = list(
-            filter(lambda a: a.time_completed > goal.start_date, activities)
+            filter(lambda a: a.time_completed > last_week, activities)
         )
 
-        max_users: int = max(len(leaderboard), 3)  # at most 3 users from team
+        # only report on the top 3 members of the team.
+        max_users: int = min(len(leaderboard), 3)  # at most 3 users from team
+        leaders: List[MemberStats] = leaderboard[:max_users]
 
-        exclude_leaders: List[str] = [i.id for i in leaderboard[:max_users]]
+        # highlights from the last week, excluding leaders.
+        exclude_leaders: List[str] = [i.id for i in leaders]
         honorable_mentions: Dict[str, Activity] = self._get_activity_leaders(
             activities, exclude_leaders
         )

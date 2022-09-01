@@ -26,8 +26,8 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    client: AlertBuilder = AlertBuilder(args.team_id)
-    alert: AlertInfo = client.build()
+    client: AlertBuilder = AlertBuilder()
+    alert: AlertInfo = client.build(args.team_id)
     pprint(alert)
 
     if alert and args.slack_token and args.slack_channel:
